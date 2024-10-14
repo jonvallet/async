@@ -6,15 +6,17 @@ import java.util.UUID;
 
 @Singleton
 public class PaymentService {
-  private final DecisionRepository decisionRepository;
 
-  public PaymentService(DecisionRepository decisionRepository) {
-    this.decisionRepository = decisionRepository;
+  private final DecisionService decisionService;
+
+  public PaymentService(DecisionService decisionService) {
+    this.decisionService = decisionService;
   }
+
 
   public String authorisePayment(UUID paymentId) {
     var decision = verify(paymentId);
-    decisionRepository.save(new Decision(paymentId, decision));
+    decisionService.persist(new Decision(paymentId, decision));
     return decision;
   }
 
