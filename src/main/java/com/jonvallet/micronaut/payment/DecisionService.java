@@ -1,8 +1,8 @@
 package com.jonvallet.micronaut.payment;
 
+import io.micronaut.scheduling.TaskExecutors;
+import io.micronaut.scheduling.annotation.Async;
 import jakarta.inject.Singleton;
-
-import java.util.UUID;
 
 @Singleton
 public class DecisionService {
@@ -13,6 +13,7 @@ public class DecisionService {
     this.decisionRepository = decisionRepository;
   }
 
+  @Async(TaskExecutors.VIRTUAL)
   public void persist(Decision decision) {
     decisionRepository.save(decision);
   }

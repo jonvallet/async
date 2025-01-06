@@ -5,25 +5,28 @@ import io.micronaut.http.client.HttpClient;
 import io.micronaut.http.client.annotation.Client;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 @MicronautTest
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class PaymentControllerIntegrationTest {
 
   @Inject
   @Client("/")
   HttpClient client;
+
+  ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
   @Test
   @Order(1)
@@ -44,14 +47,24 @@ public class PaymentControllerIntegrationTest {
     assertNotNull(response);
   }
 
-  @RepeatedTest(100)
   @Order(3)
-  public void testMultipleAuthorisePayment() {
+  @Test
+  public void testMultipleAuthorisePayment() throws Exception {
+    List<CompletableFuture<String>> futures = new ArrayList<>();
 
-    HttpRequest<PaymentRequest> request = HttpRequest.POST("/payment/authorise", new PaymentRequest(UUID.randomUUID()));
+    for (int i = 0; i < 1000; i++) {
+      futures.add(CompletableFuture.supplyAsync(this::execute, executor));
+    }
 
-    String response = client.toBlocking().retrieve(request);
-
-    assertNotNull(response);
+    for (var future : futures) {
+      future.get();
+    }
   }
+
+  private String execute() {
+    HttpRequest<PaymentRequest> request = HttpRequest.POST("/payment/authorise", new PaymentRequest(UUID.randomUUID()));
+    System.out.println("Executing request");
+    return client.toBlocking().retrieve(request);
+  }
+
 }
